@@ -20,4 +20,16 @@ describe('Carbon Calculator emissions utility tests', () => {
     expect(sumEmissions(-12.5, 8.4, null)).toBe(8.4);
     expect(sumEmissions(NaN as any, undefined, -100)).toBe(0);
   });
+
+  // 4. Test rounding behavior.
+  it('should accurately round totals to 2 decimal places', () => {
+    expect(sumEmissions(10.125, 20.556, 5.211)).toBe(35.89);
+    expect(sumEmissions(0.004, 0.002, 0.001)).toBe(0.01);
+  });
+
+  // 5. Test string-to-number parsing.
+  it('should handle string inputs correctly by parsing them before summing', () => {
+    expect(sumEmissions("10.5" as any, "15" as any, "5.25" as any)).toBe(30.75);
+    expect(sumEmissions("invalid" as any, null, 12)).toBe(12);
+  });
 });

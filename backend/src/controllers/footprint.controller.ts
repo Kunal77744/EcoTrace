@@ -106,3 +106,44 @@ export const getFootprintHistory = async (
   }
 };
 
+/**
+ * Controller to fetch all active sustainability challenges.
+ */
+export const getChallenges = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const challenges = [
+      {
+        id: '1',
+        title: 'No Car Day',
+        description: 'Use public transport, bike, or walk for all your commutes today.',
+        pointsReward: 50,
+        durationDays: 1,
+      },
+      {
+        id: '2',
+        title: 'Energy Saver',
+        description: 'Turn off all non-essential appliances and air conditioning for 4 hours.',
+        pointsReward: 30,
+        durationDays: 1,
+      },
+      {
+        id: '3',
+        title: 'Plant-Based Diet',
+        description: 'Eat only vegetarian or vegan meals today to reduce food footprint.',
+        pointsReward: 40,
+        durationDays: 1,
+      },
+    ];
+    res.status(200).json({
+      success: true,
+      data: challenges,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

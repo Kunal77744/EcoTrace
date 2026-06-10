@@ -1,4 +1,4 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useContext } from 'react';
 
 export interface User {
   id: string;
@@ -23,21 +23,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  // Restore session from localStorage on application start
-  useEffect(() => {
-    const storedToken = localStorage.getItem('ecotrace_token');
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('ecotrace_token'));
+  const [user, setUser] = useState<User | null>(() => {
     const storedUser = localStorage.getItem('ecotrace_user');
-
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setLoading(false);
-  }, []);
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
+  const [loading] = useState<boolean>(false);
 
   const login = async (email: string, password: string) => {
     try {
@@ -116,6 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {

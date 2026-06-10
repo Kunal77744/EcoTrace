@@ -26,6 +26,27 @@ export const Dashboard: React.FC = () => {
     total: 0,
   });
 
+  const calculateTotals = (data: FootprintLog[]) => {
+    let energy = 0;
+    let transport = 0;
+    let food = 0;
+
+    data.forEach((log) => {
+      energy += log.energyEmission;
+      transport += log.transportEmission;
+      food += log.foodEmission;
+    });
+
+    const total = energy + transport + food;
+
+    setTotals({
+      energy: parseFloat(energy.toFixed(1)),
+      transport: parseFloat(transport.toFixed(1)),
+      food: parseFloat(food.toFixed(1)),
+      total: parseFloat(total.toFixed(1)),
+    });
+  };
+
   useEffect(() => {
     const fetchHistory = async () => {
       try {
@@ -56,27 +77,6 @@ export const Dashboard: React.FC = () => {
     }
   }, [token]);
 
-  const calculateTotals = (data: FootprintLog[]) => {
-    let energy = 0;
-    let transport = 0;
-    let food = 0;
-
-    data.forEach((log) => {
-      energy += log.energyEmission;
-      transport += log.transportEmission;
-      food += log.foodEmission;
-    });
-
-    const total = energy + transport + food;
-
-    setTotals({
-      energy: parseFloat(energy.toFixed(1)),
-      transport: parseFloat(transport.toFixed(1)),
-      food: parseFloat(food.toFixed(1)),
-      total: parseFloat(total.toFixed(1)),
-    });
-  };
-
   // Helper values for drawing SVG chart
   const energyPercentage = totals.total > 0 ? (totals.energy / totals.total) * 100 : 0;
   const transportPercentage = totals.total > 0 ? (totals.transport / totals.total) * 100 : 0;
@@ -95,7 +95,7 @@ export const Dashboard: React.FC = () => {
     <main className="dashboard-container fade-in">
       <header className="dashboard-header flex-between">
         <div>
-          <h1>Welcome back, {user?.name || (user as any)?.username || 'User'}!</h1>
+          <h1>Welcome back, {user?.name || 'User'}!</h1>
           <p className="subtitle">Track and optimize your carbon footprint metrics below.</p>
         </div>
         <Link to="/calculator" className="btn btn-primary" aria-label="Ask AI Assistant to calculate footprint">
