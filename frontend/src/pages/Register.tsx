@@ -54,7 +54,7 @@ export const Register: React.FC = () => {
 
         {error && <div className="alert-error" role="alert" aria-live="assertive">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="auth-form">
+        <form onSubmit={handleSubmit} className="auth-form" aria-label="Registration Form">
           <div className="form-group">
             <label className="form-label" htmlFor="name">FULL NAME</label>
             <input
@@ -174,7 +174,7 @@ export const Register: React.FC = () => {
 
         <footer className="auth-footer">
           <p>
-            Already have an account? <Link to="/login">Sign In</Link>
+            Already have an account? <Link to="/login" aria-label="Navigate to login page">Sign In</Link>
           </p>
         </footer>
       </section>

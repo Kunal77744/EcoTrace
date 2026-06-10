@@ -12,11 +12,24 @@ interface FootprintLog {
   createdAt: string;
 }
 
+interface Challenge {
+  id: string;
+  title: string;
+  description: string;
+  pointsReward: number;
+  durationDays: number;
+}
+
 export const Dashboard: React.FC = () => {
   const { user, token } = useAuth();
   const [logs, setLogs] = useState<FootprintLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Challenges state
+  const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [challengesLoading, setChallengesLoading] = useState(true);
+  const [challengesError, setChallengesError] = useState<string | null>(null);
 
   // Aggregated totals
   const [totals, setTotals] = useState({
@@ -72,8 +85,56 @@ export const Dashboard: React.FC = () => {
       }
     };
 
+    const fetchChallenges = async () => {
+      try {
+        const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        const response = await fetch(`${apiBaseUrl}/footprint/challenges`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+
+        if (response.ok && data.success) {
+          setChallenges(data.data);
+        } else {
+          throw new Error(data.message || 'Failed to retrieve challenges.');
+        }
+      } catch (err) {
+        console.error('Error fetching challenges:', err);
+        setChallengesError('Failed to load challenges.');
+        // Fallback array if backend isn't populated or responds with error
+        setChallenges([
+          {
+            id: '1',
+            title: 'No Car Day',
+            description: 'Use public transport, bike, or walk for all your commutes today.',
+            pointsReward: 50,
+            durationDays: 1,
+          },
+          {
+            id: '2',
+            title: 'Energy Saver',
+            description: 'Turn off all non-essential appliances and air conditioning for 4 hours.',
+            pointsReward: 30,
+            durationDays: 1,
+          },
+          {
+            id: '3',
+            title: 'Plant-Based Diet',
+            description: 'Eat only vegetarian or vegan meals today to reduce food footprint.',
+            pointsReward: 40,
+            durationDays: 1,
+          },
+        ]);
+      } finally {
+        setChallengesLoading(false);
+      }
+    };
+
     if (token) {
       fetchHistory();
+      fetchChallenges();
     }
   }, [token]);
 
@@ -249,6 +310,53 @@ export const Dashboard: React.FC = () => {
                 )}
               </div>
             </div>
+          </section>
+
+          {/* Sustainability Challenges */}
+          <section className="challenges-section glass-card" style={{ marginTop: '32px' }} aria-label="Sustainability Challenges">
+            <h3 style={{ marginBottom: '4px' }}>Active Sustainability Challenges</h3>
+            <p className="subtitle" style={{ marginBottom: '20px' }}>Complete daily challenges to earn environmental points.</p>
+            {challengesLoading ? (
+              <div className="loading-container" style={{ padding: '20px 0', textAlign: 'center' }}>
+                <div className="spinner" role="progressbar" aria-label="Loading challenges" style={{ margin: '0 auto 12px' }}></div>
+                <p>Fetching active challenges...</p>
+              </div>
+            ) : challengesError && challenges.length === 0 ? (
+              <div className="alert-error" role="alert">{challengesError}</div>
+            ) : (
+              <div className="grid-3" style={{ marginTop: '16px' }}>
+                {challenges.map((challenge) => (
+                  <div key={challenge.id} className="challenge-card" style={{
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid var(--card-border)',
+                    borderRadius: 'var(--border-radius-sm)',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    minHeight: '160px',
+                    transition: 'var(--transition-smooth)'
+                  }}>
+                    <div>
+                      <h4 style={{ color: 'var(--accent-green)', marginBottom: '8px', fontSize: '1.1rem' }}>{challenge.title}</h4>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>{challenge.description}</p>
+                    </div>
+                    <div className="flex-between" style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Duration: {challenge.durationDays} day(s)</span>
+                      <span style={{
+                        background: 'rgba(16, 185, 129, 0.12)',
+                        color: 'var(--accent-green)',
+                        padding: '4px 10px',
+                        borderRadius: '4px',
+                        fontSize: '0.85rem',
+                        fontWeight: 700,
+                        border: '1px solid rgba(16, 185, 129, 0.2)'
+                      }}>+{challenge.pointsReward} pts</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         </>
       )}
