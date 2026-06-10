@@ -14,12 +14,7 @@ const app = express();
 
 // Security and middleware configuration
 app.use(helmet());
-app.use(
-  cors({
-    origin: ['https://ecotrace-mu.vercel.app', 'http://localhost:5173'],
-    credentials: true,
-  })
-);
+app.use(cors());
 app.use(express.json());
 
 // Apply rate limiting to all API endpoints
