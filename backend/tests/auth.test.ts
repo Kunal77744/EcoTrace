@@ -70,6 +70,31 @@ describe('Auth API Integration Tests', () => {
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('Input Validation Failed');
     });
+
+    it('should return 400 Bad Request if user email already exists', async () => {
+      const mockUserData = {
+        _id: '6523098f98d7f65f048d0df1',
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        role: 'user',
+        totalPoints: 0,
+      };
+
+      // Mock User.findOne to return existing user
+      (User.findOne as jest.Mock).mockReturnValue(mockQuery(mockUserData));
+
+      const response = await request(app)
+        .post('/api/auth/register')
+        .send({
+          name: 'Jane Doe',
+          email: 'jane@example.com',
+          password: 'password123',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('already exists');
+    });
   });
 
   describe('POST /api/auth/login', () => {
@@ -114,6 +139,42 @@ describe('Auth API Integration Tests', () => {
       expect(response.body.token).toBeDefined();
       expect(response.body.user.name).toBe('Jane Doe');
       expect(response.body.user.totalPoints).toBe(10);
+    });
+
+    it('should return 400 Bad Request if email or password is missing', async () => {
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: '',
+          password: '',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 401 Unauthorized if password comparison fails', async () => {
+      const mockUserData = {
+        _id: '6523098f98d7f65f048d0df1',
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        role: 'user',
+        totalPoints: 10,
+        comparePassword: jest.fn().mockResolvedValue(false),
+      };
+
+      (User.findOne as jest.Mock).mockReturnValue(mockQuery(mockUserData));
+
+      const response = await request(app)
+        .post('/api/auth/login')
+        .send({
+          email: 'jane@example.com',
+          password: 'wrongpassword',
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Invalid credentials');
     });
   });
 });

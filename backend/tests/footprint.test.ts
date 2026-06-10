@@ -114,4 +114,59 @@ describe('Footprint API Integration Tests', () => {
       );
     });
   });
+
+  describe('GET /api/footprint/history', () => {
+    it('should return 401 Unauthorized if the Authorization bearer token is missing', async () => {
+      const response = await request(app).get('/api/footprint/history');
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 200 OK and list of historical logs for authenticated user', async () => {
+      const mockLogs = [
+        {
+          _id: '6523098f98d7f65f048d0df3',
+          userId: mockUserId,
+          energyEmission: 2.1,
+          transportEmission: 4.5,
+          foodEmission: 0.8,
+          totalEmission: 7.4,
+          suggestions: [],
+        },
+      ];
+
+      const mockLean = jest.fn().mockResolvedValue(mockLogs);
+      const mockSort = jest.fn().mockReturnValue({ lean: mockLean });
+      (Footprint.find as jest.Mock).mockReturnValue({ sort: mockSort });
+
+      const response = await request(app)
+        .get('/api/footprint/history')
+        .set('Authorization', `Bearer ${mockToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data[0].totalEmission).toBe(7.4);
+    });
+  });
+
+  describe('GET /api/footprint/challenges', () => {
+    it('should return 401 Unauthorized if the Authorization bearer token is missing', async () => {
+      const response = await request(app).get('/api/footprint/challenges');
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 200 OK and list active challenges for authenticated user', async () => {
+      const response = await request(app)
+        .get('/api/footprint/challenges')
+        .set('Authorization', `Bearer ${mockToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.data).toBeInstanceOf(Array);
+      expect(response.body.data[0]).toHaveProperty('title');
+      expect(response.body.data[0]).toHaveProperty('pointsReward');
+    });
+  });
 });
