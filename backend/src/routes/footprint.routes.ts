@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { calculateFootprint, getFootprintHistory, getChallenges, completeChallenge } from '../controllers/footprint.controller';
+import { calculateFootprint, getFootprintHistory, getChallenges, completeChallenge, deleteFootprint } from '../controllers/footprint.controller';
 import { auth } from '../middlewares/auth';
 import { validate } from '../middlewares/validate';
 import { calculateFootprintSchema } from '../validations/footprint.validation';
@@ -33,5 +33,12 @@ router.get('/challenges', auth, getChallenges);
  * @access  Private
  */
 router.post('/challenges/:id/complete', auth, completeChallenge);
+
+/**
+ * @route   DELETE /api/footprint/:id
+ * @desc    Delete a carbon footprint log record
+ * @access  Private
+ */
+router.delete('/:id', auth, deleteFootprint);
 
 export default router;

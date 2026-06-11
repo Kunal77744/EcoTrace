@@ -145,3 +145,22 @@ export const getMe = async (req: Request, res: Response, next: NextFunction): Pr
     next(error);
   }
 };
+
+/**
+ * Fetch top 5 users sorted by points for the leaderboard.
+ */
+export const getLeaderboard = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const topUsers = await User.find()
+      .select('name totalPoints')
+      .sort({ totalPoints: -1 })
+      .limit(5)
+      .lean();
+    res.status(200).json({
+      success: true,
+      data: topUsers,
+    });
+  } catch (error) {
+    next(error);
+  }
+};

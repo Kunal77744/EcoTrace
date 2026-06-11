@@ -29,6 +29,29 @@ export const Dashboard: React.FC = () => {
   const [completingId, setCompletingId] = useState<string | null>(null);
   const [challengeMessage, setChallengeMessage] = useState<{ id: string; text: string; error: boolean } | null>(null);
 
+  // Leaderboard state
+  const [leaderboard, setLeaderboard] = useState<{ name: string; totalPoints: number }[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(true);
+
+  const fetchLeaderboard = async () => {
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/auth/leaderboard`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setLeaderboard(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching leaderboard:', err);
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
   const handleCompleteChallenge = async (challengeId: string) => {
     setCompletingId(challengeId);
     setChallengeMessage(null);
@@ -36,6 +59,7 @@ export const Dashboard: React.FC = () => {
     setCompletingId(null);
     if (result.success) {
       setChallengeMessage({ id: challengeId, text: result.message, error: false });
+      fetchLeaderboard();
       // Clear message after 4 seconds
       setTimeout(() => {
         setChallengeMessage(prev => prev?.id === challengeId ? null : prev);
@@ -44,6 +68,47 @@ export const Dashboard: React.FC = () => {
       setChallengeMessage({ id: challengeId, text: result.message, error: true });
     }
   };
+
+  const handleDeleteLog = async (logId: string) => {
+    if (!window.confirm('Are you sure you want to delete this carbon footprint log?')) return;
+    try {
+      const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const response = await fetch(`${apiBaseUrl}/footprint/${logId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        const updatedLogs = logs.filter(l => l._id !== logId);
+        setLogs(updatedLogs);
+        calculateTotals(updatedLogs);
+      } else {
+        alert(data.message || 'Failed to delete footprint record.');
+      }
+    } catch (err) {
+      console.error('Error deleting log:', err);
+      alert('Failed to reach server.');
+    }
+  };
+
+  // Badge Level Helpers
+  const getLevelInfo = (points: number) => {
+    if (points <= 100) {
+      return { levelName: 'Eco Novice', min: 0, max: 100, nextName: 'Green Guardian' };
+    } else if (points <= 300) {
+      return { levelName: 'Green Guardian', min: 100, max: 300, nextName: 'Carbon Crusader' };
+    } else if (points <= 500) {
+      return { levelName: 'Carbon Crusader', min: 300, max: 500, nextName: 'Eco Champion' };
+    } else {
+      return { levelName: 'Eco Champion', min: 500, max: 1000, nextName: 'Max Level Reached' };
+    }
+  };
+
+  const pts = user?.totalPoints || 0;
+  const levelInfo = getLevelInfo(pts);
+  const progressPercent = Math.min(100, ((pts - levelInfo.min) / (levelInfo.max - levelInfo.min)) * 100);
 
   // Challenges state
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -154,6 +219,7 @@ export const Dashboard: React.FC = () => {
     if (token) {
       fetchHistory();
       fetchChallenges();
+      fetchLeaderboard();
     }
   }, [token]);
 
@@ -184,14 +250,38 @@ export const Dashboard: React.FC = () => {
       </header>
 
       {/* Point Tracker Banner */}
-      <section className="points-banner glass-card flex-between" aria-label="Points Summary">
-        <div className="points-text">
-          <h3>Sustainability Level</h3>
-          <p>You have earned environmental credits by logging your daily routines.</p>
+      <section className="points-banner glass-card flex-between" aria-label="Points Summary" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '16px' }}>
+        <div className="flex-between">
+          <div className="points-text">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              Level: <span style={{ color: 'var(--accent-green)' }}>{levelInfo.levelName}</span>
+            </h3>
+            <p style={{ marginTop: '4px', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+              Points: <strong>{pts}</strong> / {levelInfo.max} pts to next rank
+            </p>
+          </div>
+          <div className="points-display" style={{ padding: '8px 20px' }}>
+            <span className="points-number" style={{ fontSize: '1.8rem' }}>{pts}</span>
+            <span className="points-label" style={{ fontSize: '0.65rem' }}>Total Points</span>
+          </div>
         </div>
-        <div className="points-display">
-          <span className="points-number">{user?.totalPoints}</span>
-          <span className="points-label">Total Points</span>
+
+        {/* Level Progress Bar */}
+        <div style={{ marginTop: '4px' }}>
+          <div className="bar-track" style={{ height: '8px', background: 'rgba(255,255,255,0.06)' }}>
+            <div 
+              className="bar-fill" 
+              style={{ 
+                width: `${progressPercent}%`, 
+                backgroundColor: 'var(--accent-green)', 
+                boxShadow: '0 0 10px rgba(47, 141, 70, 0.4)' 
+              }}
+            ></div>
+          </div>
+          <div className="flex-between" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '6px' }}>
+            <span>{levelInfo.min} pts</span>
+            <span>Next: {levelInfo.nextName} ({levelInfo.max} pts)</span>
+          </div>
         </div>
       </section>
 
@@ -225,7 +315,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </section>
 
-          <section className="grid-2 chart-and-logs-grid" aria-label="Detailed Charts and Historical Logs">
+          <section className="grid-3 chart-and-logs-grid" aria-label="Detailed Charts and Historical Logs">
             {/* Visual breakdown chart */}
             <div className="chart-card glass-card flex-between flex-wrap">
               <div className="chart-info">
@@ -255,7 +345,7 @@ export const Dashboard: React.FC = () => {
                       cy="80"
                       r={radius}
                       fill="transparent"
-                      stroke="#10b981"
+                      stroke="#2f8d46"
                       strokeWidth="18"
                       strokeDasharray={circumference}
                       strokeDashoffset={energyOffset}
@@ -308,7 +398,7 @@ export const Dashboard: React.FC = () => {
                   </div>
                 ) : (
                   logs.slice(0, 5).map((log) => (
-                    <div key={log._id} className="log-row flex-between">
+                    <div key={log._id} className="log-row flex-between" style={{ gap: '12px' }}>
                       <div className="log-meta">
                         <span className="log-date">
                           {new Date(log.createdAt).toLocaleDateString(undefined, {
@@ -321,11 +411,79 @@ export const Dashboard: React.FC = () => {
                           E: {log.energyEmission} | T: {log.transportEmission} | F: {log.foodEmission}
                         </div>
                       </div>
-                      <div className="log-value-badge">
-                        {log.totalEmission} kg CO2
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div className="log-value-badge">
+                          {log.totalEmission} kg CO2
+                        </div>
+                        <button
+                          onClick={() => handleDeleteLog(log._id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: 'pointer',
+                            color: 'var(--state-error)',
+                            padding: '4px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            opacity: 0.6,
+                            transition: 'opacity 0.2s'
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.6')}
+                          title="Delete log record"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        </button>
                       </div>
                     </div>
                   ))
+                )}
+              </div>
+            </div>
+
+            {/* Global Leaderboard List */}
+            <div className="logs-card glass-card">
+              <h3>Global Leaderboard</h3>
+              <div className="logs-list">
+                {leaderboardLoading ? (
+                  <div className="loading-container" style={{ padding: '20px 0' }}>
+                    <div className="spinner" style={{ width: '24px', height: '24px' }}></div>
+                  </div>
+                ) : leaderboard.length === 0 ? (
+                  <div className="empty-logs">
+                    <p>No leaderboard entries.</p>
+                  </div>
+                ) : (
+                  leaderboard.map((u, idx) => {
+                    const isCurrentUser = u.name === user?.name;
+                    return (
+                      <div 
+                        key={idx} 
+                        className="log-row flex-between" 
+                        style={{ 
+                          borderLeft: isCurrentUser ? '3px solid var(--accent-green)' : undefined,
+                          background: isCurrentUser ? 'rgba(47, 141, 70, 0.05)' : undefined
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ 
+                            fontSize: '0.85rem', 
+                            fontWeight: 700, 
+                            color: idx === 0 ? '#ffd700' : idx === 1 ? '#c0c0c0' : idx === 2 ? '#cd7f32' : 'var(--text-muted)'
+                          }}>
+                            #{idx + 1}
+                          </span>
+                          <span style={{ fontWeight: isCurrentUser ? 700 : 500 }}>
+                            {u.name} {isCurrentUser && '(You)'}
+                          </span>
+                        </div>
+                        <span className="points-badge" style={{ border: 'none', background: 'rgba(255,255,255,0.05)', color: 'var(--text-primary)' }}>
+                          {u.totalPoints} pts
+                        </span>
+                      </div>
+                    );
+                  })
                 )}
               </div>
             </div>

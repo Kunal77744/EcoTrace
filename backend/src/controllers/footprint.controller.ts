@@ -221,3 +221,42 @@ export const completeChallenge = async (
   }
 };
 
+/**
+ * Controller to handle deletion of a carbon footprint record.
+ * Only allows deleting records owned by the authenticated user.
+ */
+export const deleteFootprint = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication context is missing user details.',
+      });
+      return;
+    }
+
+    const footprint = await Footprint.findOneAndDelete({ _id: id, userId });
+    if (!footprint) {
+      res.status(404).json({
+        success: false,
+        message: 'Carbon footprint record not found or unauthorized to delete.',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Carbon footprint record deleted successfully.',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

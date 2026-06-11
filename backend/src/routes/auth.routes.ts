@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { register, login, getMe } from '../controllers/auth.controller';
+import { register, login, getMe, getLeaderboard } from '../controllers/auth.controller';
 import { validate } from '../middlewares/validate';
 import { auth } from '../middlewares/auth';
 import { z } from 'zod';
@@ -42,5 +42,12 @@ router.post('/login', validate(loginSchema), login);
  * @access  Private
  */
 router.get('/me', auth, getMe);
+
+/**
+ * @route   GET /api/auth/leaderboard
+ * @desc    Get top 5 users sorted by total points
+ * @access  Private
+ */
+router.get('/leaderboard', auth, getLeaderboard);
 
 export default router;

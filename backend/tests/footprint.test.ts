@@ -169,4 +169,27 @@ describe('Footprint API Integration Tests', () => {
       expect(response.body.data[0]).toHaveProperty('pointsReward');
     });
   });
+
+  describe('DELETE /api/footprint/:id', () => {
+    it('should return 401 Unauthorized if the Authorization bearer token is missing', async () => {
+      const response = await request(app).delete('/api/footprint/6523098f98d7f65f048d0df4');
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 200 OK if footprint deletion succeeds', async () => {
+      (Footprint.findOneAndDelete as jest.Mock).mockResolvedValue({
+        _id: '6523098f98d7f65f048d0df4',
+        userId: mockUserId,
+      });
+
+      const response = await request(app)
+        .delete('/api/footprint/6523098f98d7f65f048d0df4')
+        .set('Authorization', `Bearer ${mockToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.message).toContain('deleted successfully');
+    });
+  });
 });
