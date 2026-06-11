@@ -21,10 +21,29 @@ interface Challenge {
 }
 
 export const Dashboard: React.FC = () => {
-  const { user, token } = useAuth();
+  const { user, token, completeChallenge } = useAuth();
   const [logs, setLogs] = useState<FootprintLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [completingId, setCompletingId] = useState<string | null>(null);
+  const [challengeMessage, setChallengeMessage] = useState<{ id: string; text: string; error: boolean } | null>(null);
+
+  const handleCompleteChallenge = async (challengeId: string) => {
+    setCompletingId(challengeId);
+    setChallengeMessage(null);
+    const result = await completeChallenge(challengeId);
+    setCompletingId(null);
+    if (result.success) {
+      setChallengeMessage({ id: challengeId, text: result.message, error: false });
+      // Clear message after 4 seconds
+      setTimeout(() => {
+        setChallengeMessage(prev => prev?.id === challengeId ? null : prev);
+      }, 4000);
+    } else {
+      setChallengeMessage({ id: challengeId, text: result.message, error: true });
+    }
+  };
 
   // Challenges state
   const [challenges, setChallenges] = useState<Challenge[]>([]);
@@ -325,36 +344,61 @@ export const Dashboard: React.FC = () => {
               <div className="alert-error" role="alert">{challengesError}</div>
             ) : (
               <div className="grid-3" style={{ marginTop: '16px' }}>
-                {challenges.map((challenge) => (
-                  <div key={challenge.id} className="challenge-card" style={{
-                    background: 'rgba(255, 255, 255, 0.02)',
-                    border: '1px solid var(--card-border)',
-                    borderRadius: 'var(--border-radius-sm)',
-                    padding: '20px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'space-between',
-                    minHeight: '160px',
-                    transition: 'var(--transition-smooth)'
-                  }}>
-                    <div>
-                      <h4 style={{ color: 'var(--accent-green)', marginBottom: '8px', fontSize: '1.1rem' }}>{challenge.title}</h4>
-                      <p style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: '1.4' }}>{challenge.description}</p>
+                {challenges.map((challenge) => {
+                  const isCompleted = user?.completedChallenges?.includes(challenge.id) || false;
+                  const isThisCompleting = completingId === challenge.id;
+                  const msg = challengeMessage?.id === challenge.id ? challengeMessage : null;
+
+                  return (
+                    <div
+                      key={challenge.id}
+                      className={`challenge-card glass-card ${isCompleted ? 'challenge-completed' : ''}`}
+                    >
+                      <div className="challenge-icon-wrapper">
+                        {challenge.id === '1' && (
+                          <svg className="challenge-icon text-transport" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-1.1 0-2 .9-2 2v7c0 .6.4 1 1 1h2" /><circle cx="7" cy="17" r="2" /><circle cx="15" cy="17" r="2" /><path d="M13 17h-4" /></svg>
+                        )}
+                        {challenge.id === '2' && (
+                          <svg className="challenge-icon text-energy" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+                        )}
+                        {challenge.id === '3' && (
+                          <svg className="challenge-icon text-food" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2c-5.5 0-10 4.5-10 10s4.5 10 10 10 10-4.5 10-10-4.5-10-10-10zm0 15c-2.8 0-5-2.2-5-5s2.2-5 5-5 5 2.2 5 5-2.2 5-5 5z" /><circle cx="12" cy="12" r="2" /></svg>
+                        )}
+                      </div>
+                      <div className="challenge-info-main">
+                        <h4>{challenge.title}</h4>
+                        <p>{challenge.description}</p>
+                      </div>
+                      
+                      {msg && (
+                        <div className={`challenge-alert ${msg.error ? 'alert-error' : 'alert-success'}`}>
+                          {msg.text}
+                        </div>
+                      )}
+
+                      <div className="challenge-footer flex-between">
+                        <span className="challenge-reward">+{challenge.pointsReward} pts</span>
+                        {isCompleted ? (
+                          <span className="completed-badge">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Completed
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => handleCompleteChallenge(challenge.id)}
+                            className="btn btn-primary btn-sm btn-challenge-complete"
+                            disabled={isThisCompleting}
+                          >
+                            {isThisCompleting ? (
+                              <span className="mini-spinner"></span>
+                            ) : (
+                              'Claim Points'
+                            )}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex-between" style={{ marginTop: 'auto', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                      <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Duration: {challenge.durationDays} day(s)</span>
-                      <span style={{
-                        background: 'rgba(16, 185, 129, 0.12)',
-                        color: 'var(--accent-green)',
-                        padding: '4px 10px',
-                        borderRadius: '4px',
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        border: '1px solid rgba(16, 185, 129, 0.2)'
-                      }}>+{challenge.pointsReward} pts</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>

@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: string;
   totalPoints: number;
+  completedChallenges: string[];
 }
 
 interface AuthContextType {
@@ -16,6 +17,7 @@ interface AuthContextType {
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; message: string }>;
   logout: () => void;
   updatePoints: (additionalPoints: number) => void;
+  completeChallenge: (challengeId: string) => Promise<{ success: boolean; message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,7 +30,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const storedUser = localStorage.getItem('ecotrace_user');
     return storedUser ? JSON.parse(storedUser) : null;
   });
-  const [loading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(!!localStorage.getItem('ecotrace_token'));
+
+  React.useEffect(() => {
+    const verifySession = async () => {
+      const storedToken = localStorage.getItem('ecotrace_token');
+      if (storedToken) {
+        try {
+          const response = await fetch(`${API_BASE_URL}/auth/me`, {
+            headers: {
+              Authorization: `Bearer ${storedToken}`,
+            },
+          });
+          const data = await response.json();
+          if (response.ok && data.success) {
+            setUser(data.user);
+            localStorage.setItem('ecotrace_user', JSON.stringify(data.user));
+          } else {
+            // Token expired or invalid, clear session
+            setToken(null);
+            setUser(null);
+            localStorage.removeItem('ecotrace_token');
+            localStorage.removeItem('ecotrace_user');
+          }
+        } catch (error) {
+          console.error('Session verification error:', error);
+        }
+      }
+      setLoading(false);
+    };
+
+    verifySession();
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -94,14 +127,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const updatePoints = (additionalPoints: number) => {
     setUser((prevUser) => {
       if (!prevUser) return null;
-      const updated = { ...prevUser, totalPoints: prevUser.totalPoints + additionalPoints };
+      const updated = {
+        ...prevUser,
+        totalPoints: prevUser.totalPoints + additionalPoints,
+        completedChallenges: prevUser.completedChallenges || [],
+      };
       localStorage.setItem('ecotrace_user', JSON.stringify(updated));
       return updated;
     });
   };
 
+  const completeChallenge = async (challengeId: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/footprint/challenges/${challengeId}/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setUser((prevUser) => {
+          if (!prevUser) return null;
+          const updated = {
+            ...prevUser,
+            totalPoints: data.data.totalPoints,
+            completedChallenges: data.data.completedChallenges,
+          };
+          localStorage.setItem('ecotrace_user', JSON.stringify(updated));
+          return updated;
+        });
+        return { success: true, message: data.message };
+      } else {
+        return { success: false, message: data.message || 'Failed to complete challenge.' };
+      }
+    } catch (error) {
+      console.error('Complete challenge error:', error);
+      return { success: false, message: 'Server is currently unreachable.' };
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updatePoints }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        loading,
+        login,
+        register,
+        logout,
+        updatePoints,
+        completeChallenge,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

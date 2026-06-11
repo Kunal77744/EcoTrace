@@ -36,11 +36,20 @@
   padding: 0;
 }
 
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 body {
-  background-color: var(--bg-primary);
+  background-color: #05070f;
   background-image: 
-    radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.07) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, rgba(59, 130, 246, 0.07) 0px, transparent 50%);
+    radial-gradient(circle at 15% 15%, rgba(16, 185, 129, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(59, 130, 246, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.05) 0%, transparent 60%);
+  background-size: 200% 200%;
+  animation: gradientShift 18s ease infinite;
   color: var(--text-primary);
   font-family: var(--font-body);
   line-height: 1.6;
@@ -73,19 +82,20 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Glassmorphism Card Style */
 .glass-card {
-  background: var(--card-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--card-border);
+  background: linear-gradient(135deg, rgba(20, 26, 48, 0.7) 0%, rgba(10, 14, 30, 0.85) 100%);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--border-radius-md);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45), inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
   padding: 24px;
   transition: var(--transition-smooth);
 }
 
 .glass-card:hover {
-  border-color: rgba(16, 185, 129, 0.2);
-  box-shadow: 0 12px 40px 0 rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.25);
+  box-shadow: 0 16px 40px 0 rgba(16, 185, 129, 0.08), 0 0 24px 0 rgba(16, 185, 129, 0.02), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
 /* Inputs & Form Controls */
@@ -105,20 +115,22 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-input {
   width: 100%;
-  background: rgba(15, 23, 42, 0.6);
-  border: 1px solid var(--card-border);
+  background: rgba(8, 12, 24, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--border-radius-sm);
   color: var(--text-primary);
   font-family: var(--font-body);
   font-size: 1rem;
   padding: 12px 16px;
+  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.5);
   transition: var(--transition-smooth);
 }
 
 .form-input:focus {
   outline: none;
   border-color: var(--accent-green);
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  box-shadow: 0 0 16px 0 rgba(16, 185, 129, 0.18), inset 0 2px 4px 0 rgba(0, 0, 0, 0.6);
+  background: rgba(8, 12, 24, 0.95);
 }
 
 /* Buttons */
@@ -402,9 +414,27 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .points-banner {
-  background: radial-gradient(circle at 100% 0%, rgba(16, 185, 129, 0.15) 0%, transparent 60%), var(--card-bg);
-  border-color: rgba(16, 185, 129, 0.15);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%), var(--card-bg);
+  border-color: rgba(16, 185, 129, 0.2);
   margin-bottom: 32px;
+  position: relative;
+  overflow: hidden;
+}
+
+.points-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.04), transparent);
+  transform: translateX(-100%);
+  animation: bannerShimmer 4500ms infinite;
+}
+
+@keyframes bannerShimmer {
+  100% { transform: translateX(100%); }
 }
 
 .points-text h3 {
@@ -673,8 +703,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .total-emission-banner {
   margin-top: 20px;
-  background: linear-gradient(135deg, rgba(20, 26, 48, 0.8) 0%, rgba(7, 10, 19, 0.9) 100%);
-  border: 1px solid var(--card-border);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(59, 130, 246, 0.12) 100%), rgba(10, 14, 30, 0.8);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 0 20px 0 rgba(16, 185, 129, 0.08);
   padding: 20px;
   border-radius: var(--border-radius-sm);
 }
@@ -815,5 +846,190 @@ h1, h2, h3, h4, h5, h6 {
 
 .flex-wrap {
   flex-wrap: wrap;
+}
+
+/* Custom SVG Brand Logo styles */
+.logo-svg {
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.35));
+}
+
+.navbar-brand:hover .logo-svg {
+  transform: rotate(15deg) scale(1.1);
+  filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.55)) drop-shadow(0 0 12px rgba(59, 130, 246, 0.35));
+}
+
+/* Interactive Challenge Cards styling */
+.challenge-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 250px !important;
+  transition: var(--transition-smooth);
+  overflow: hidden;
+}
+
+.challenge-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.015) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.challenge-icon-wrapper {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+  transition: var(--transition-smooth);
+}
+
+.challenge-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.text-transport {
+  color: var(--accent-blue);
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.35));
+}
+
+.text-energy {
+  color: var(--accent-green);
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.35));
+}
+
+.text-food {
+  color: var(--accent-purple);
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.35));
+}
+
+.challenge-card:hover .challenge-icon-wrapper {
+  background: rgba(255, 255, 255, 0.06);
+  transform: scale(1.1) rotate(5deg);
+}
+
+.challenge-info-main h4 {
+  font-size: 1.1rem;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+}
+
+.challenge-info-main p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 16px;
+}
+
+.challenge-reward {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent-green);
+}
+
+.completed-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: var(--accent-green);
+  font-size: 0.85rem;
+  font-weight: 700;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-family: var(--font-heading);
+  animation: completePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes completePop {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.challenge-completed {
+  border-color: rgba(16, 185, 129, 0.25) !important;
+  background: linear-gradient(135deg, rgba(20, 26, 48, 0.45) 0%, rgba(16, 185, 129, 0.05) 100%) !important;
+}
+
+.challenge-alert {
+  padding: 8px 12px;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 12px;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.alert-success {
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--accent-green);
+}
+
+.btn-challenge-complete {
+  font-size: 0.85rem;
+  padding: 8px 16px;
+  border-radius: 6px;
+}
+
+/* Animated floating glow bubbles for auth backgrounds */
+.auth-page-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-page-container::before,
+.auth-page-container::after {
+  content: '';
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  filter: blur(120px);
+  z-index: -1;
+  pointer-events: none;
+  animation: floatGlow 12s ease-in-out infinite alternate;
+}
+
+.auth-page-container::before {
+  background: rgba(16, 185, 129, 0.12);
+  top: 10%;
+  left: 10%;
+}
+
+.auth-page-container::after {
+  background: rgba(59, 130, 246, 0.12);
+  bottom: 10%;
+  right: 10%;
+  animation-delay: -6s;
+}
+
+@keyframes floatGlow {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  100% {
+    transform: translate(40px, 40px) scale(1.2);
+  }
 }
 

@@ -31,6 +31,7 @@ describe('Rate Limiter Middleware Unit Tests', () => {
   });
 
   it('should reject requests with 429 when limit is exceeded', () => {
+    (mockRequest as any).ip = '127.0.0.2'; // Use a fresh IP to avoid shared rate limit state from previous test
     // Make 60 requests (the limit)
     for (let i = 0; i < 60; i++) {
       rateLimiter(mockRequest as Request, mockResponse as Response, nextFunction);

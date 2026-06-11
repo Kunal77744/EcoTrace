@@ -46,6 +46,7 @@ export const register = async (req: Request, res: Response, next: NextFunction):
         email: user.email,
         role: user.role,
         totalPoints: user.totalPoints,
+        completedChallenges: user.completedChallenges || [],
       },
     });
   } catch (error) {
@@ -98,6 +99,46 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
         email: user.email,
         role: user.role,
         totalPoints: user.totalPoints,
+        completedChallenges: user.completedChallenges || [],
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Get current authenticated user profile.
+ */
+export const getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication context is missing user details.',
+      });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found.',
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        totalPoints: user.totalPoints,
+        completedChallenges: user.completedChallenges || [],
       },
     });
   } catch (error) {

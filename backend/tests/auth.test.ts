@@ -1,5 +1,6 @@
 import request from 'supertest';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 
 // Mock User model
 jest.mock('../src/models/User');
@@ -175,6 +176,44 @@ describe('Auth API Integration Tests', () => {
       expect(response.status).toBe(401);
       expect(response.body.success).toBe(false);
       expect(response.body.message).toContain('Invalid credentials');
+    });
+  });
+
+  describe('GET /api/auth/me', () => {
+    it('should return 401 Unauthorized if token is missing', async () => {
+      const response = await request(app).get('/api/auth/me');
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+    });
+
+    it('should return 200 OK and current user details if token is valid', async () => {
+      const secret = process.env.JWT_SECRET || 'secret';
+      const mockUserId = '6523098f98d7f65f048d0df1';
+      const mockToken = jwt.sign(
+        { id: mockUserId, email: 'jane@example.com', role: 'user' },
+        secret,
+        { expiresIn: '1h' }
+      );
+
+      const mockUserData = {
+        _id: mockUserId,
+        name: 'Jane Doe',
+        email: 'jane@example.com',
+        role: 'user',
+        totalPoints: 10,
+        completedChallenges: ['1'],
+      };
+
+      (User.findById as jest.Mock).mockResolvedValue(mockUserData);
+
+      const response = await request(app)
+        .get('/api/auth/me')
+        .set('Authorization', `Bearer ${mockToken}`);
+
+      expect(response.status).toBe(200);
+      expect(response.body.success).toBe(true);
+      expect(response.body.user.name).toBe('Jane Doe');
+      expect(response.body.user.completedChallenges).toContain('1');
     });
   });
 });

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { calculateFootprint, getFootprintHistory, getChallenges } from '../controllers/footprint.controller';
+import { calculateFootprint, getFootprintHistory, getChallenges, completeChallenge } from '../controllers/footprint.controller';
 import { auth } from '../middlewares/auth';
 import { validate } from '../middlewares/validate';
 import { calculateFootprintSchema } from '../validations/footprint.validation';
@@ -26,5 +26,12 @@ router.get('/history', auth, getFootprintHistory);
  * @access  Private
  */
 router.get('/challenges', auth, getChallenges);
+
+/**
+ * @route   POST /api/footprint/challenges/:id/complete
+ * @desc    Mark a challenge as completed and add rewards points
+ * @access  Private
+ */
+router.post('/challenges/:id/complete', auth, completeChallenge);
 
 export default router;

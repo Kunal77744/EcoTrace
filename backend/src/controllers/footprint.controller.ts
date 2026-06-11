@@ -147,3 +147,77 @@ export const getChallenges = async (
   }
 };
 
+/**
+ * Controller to handle challenge completion.
+ * Increments user points and marks the challenge completed.
+ */
+export const completeChallenge = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      res.status(401).json({
+        success: false,
+        message: 'Authentication context is missing user details.',
+      });
+      return;
+    }
+
+    const challenges = [
+      { id: '1', title: 'No Car Day', pointsReward: 50 },
+      { id: '2', title: 'Energy Saver', pointsReward: 30 },
+      { id: '3', title: 'Plant-Based Diet', pointsReward: 40 },
+    ];
+
+    const challenge = challenges.find((c) => c.id === id);
+    if (!challenge) {
+      res.status(404).json({
+        success: false,
+        message: 'Challenge not found.',
+      });
+      return;
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found.',
+      });
+      return;
+    }
+
+    if (!user.completedChallenges) {
+      user.completedChallenges = [];
+    }
+
+    if (user.completedChallenges.includes(id)) {
+      res.status(400).json({
+        success: false,
+        message: 'You have already completed this challenge.',
+      });
+      return;
+    }
+
+    user.completedChallenges.push(id);
+    user.totalPoints += challenge.pointsReward;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Challenge "${challenge.title}" completed successfully!`,
+      data: {
+        totalPoints: user.totalPoints,
+        completedChallenges: user.completedChallenges,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+

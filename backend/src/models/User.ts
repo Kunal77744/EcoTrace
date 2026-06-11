@@ -7,6 +7,7 @@ export interface IUser extends Document {
   password?: string;
   role: 'user' | 'admin';
   totalPoints: number;
+  completedChallenges: string[];
   createdAt: Date;
   updatedAt: Date;
   comparePassword(password: string): Promise<boolean>;
@@ -38,6 +39,10 @@ const UserSchema = new Schema<IUser>(
     totalPoints: {
       type: Number,
       default: 0,
+    },
+    completedChallenges: {
+      type: [String],
+      default: [],
     },
   },
   {
